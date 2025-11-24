@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 import pickle
 import warnings
 warnings.filterwarnings('ignore')
@@ -29,8 +30,16 @@ def cargar_datos_hojas(ruta='hojas_dataset.csv'):
     nombres_especies = ['Jacaranda', 'Abedul', 'Fresno']
     return X, y, nombres_especies
 
-def cargar_datos_iris():
-    """Carga el dataset Iris (solo 2 características para visualización)"""
+def cargar_datos_iris_completo():
+    """Carga el dataset Iris completo (4 características)"""
+    data = load_iris()
+    X = data.data
+    y = data.target
+    nombres_especies = ['Setosa', 'Versicolor', 'Virginica']
+    return X, y, nombres_especies
+
+def cargar_datos_iris_2d():
+    """Carga el dataset Iris con solo 2 características para visualización"""
     data = load_iris()
     # Usar petal length y petal width (más discriminativas)
     X = data.data[:, 2:4]
@@ -50,7 +59,7 @@ def crear_malla(X, h=0.02):
 # VISUALIZACIÓN DE FRONTERAS DE DECISIÓN
 # ============================================================================
 
-def plot_decision_boundary(modelo, X, y, nombres_especies, titulo, scaler=None, ax=None):
+def plot_decision_boundary(modelo, X, y, nombres_especies, titulo, scaler=None, ax=None, usar_pca=False):
     """Grafica la frontera de decisión de un modelo"""
     
     if ax is None:
@@ -61,10 +70,35 @@ def plot_decision_boundary(modelo, X, y, nombres_especies, titulo, scaler=None, 
     
     # Predecir en la malla
     Z_input = np.c_[xx.ravel(), yy.ravel()]
-    if scaler is not None:
-        Z_input = scaler.transform(Z_input)
     
-    Z = modelo.predict(Z_input)
+    if scaler is not None:
+        # Si el modelo espera más características, necesitamos PCA
+        if usar_pca:
+            # Usar PCA para reducir de 4D a 2D
+            pca = PCA(n_components=2)
+            X_full = scaler.inverse_transform(X)  # Recuperar datos originales
+            pca.fit(X_full)
+            
+            # Expandir Z_input a 4D (rellenar con medias)
+            medias = X_full.mean(axis=0)
+            Z_input_4d = np.column_stack([
+                Z_input[:, 0],  # petal length
+                Z_input[:, 1],  # petal width
+                np.full(len(Z_input), medias[0]),  # sepal length (media)
+                np.full(len(Z_input), medias[1])   # sepal width (media)
+            ])
+            Z_input_scaled = scaler.transform(Z_input_4d)
+        else:
+            Z_input_scaled = scaler.transform(Z_input)
+    else:
+        Z_input_scaled = Z_input
+    
+    try:
+        Z = modelo.predict(Z_input_scaled)
+    except:
+        # Si falla, usar solo las características disponibles
+        Z = modelo.predict(Z_input)
+    
     Z = Z.reshape(xx.shape)
     
     # Colores
@@ -96,7 +130,7 @@ def plot_decision_boundary(modelo, X, y, nombres_especies, titulo, scaler=None, 
     ax.legend(fontsize=10, loc='best')
     ax.grid(True, alpha=0.3)
 
-def visualizar_todas_fronteras(X, y, nombres_especies, resultados_lista, nombre_dataset):
+def visualizar_todas_fronteras(X, y, nombres_especies, resultados_lista, nombre_dataset, usar_pca=False):
     """Visualiza las fronteras de decisión de todos los algoritmos"""
     
     print(f"\nGenerando visualizaciones de fronteras de decisión para {nombre_dataset}...")
@@ -110,7 +144,7 @@ def visualizar_todas_fronteras(X, y, nombres_especies, resultados_lista, nombre_
         nombre = res['nombre']
         
         plot_decision_boundary(modelo, X, y, nombres_especies, 
-                             nombre, scaler, ax=axes[idx])
+                             nombre, scaler, ax=axes[idx], usar_pca=usar_pca)
     
     plt.suptitle(f'Fronteras de Decisión - {nombre_dataset}', 
                 fontsize=18, fontweight='bold', y=0.995)
@@ -125,7 +159,7 @@ def visualizar_todas_fronteras(X, y, nombres_especies, resultados_lista, nombre_
 # VISUALIZACIÓN INDIVIDUAL DE CADA ALGORITMO
 # ============================================================================
 
-def visualizar_fronteras_individuales(X, y, nombres_especies, resultados_lista, nombre_dataset):
+def visualizar_fronteras_individuales(X, y, nombres_especies, resultados_lista, nombre_dataset, usar_pca=False):
     """Genera visualizaciones individuales de alta calidad para cada algoritmo"""
     
     print(f"\nGenerando visualizaciones individuales para {nombre_dataset}...")
@@ -137,7 +171,7 @@ def visualizar_fronteras_individuales(X, y, nombres_especies, resultados_lista, 
         
         fig, ax = plt.subplots(figsize=(12, 9))
         plot_decision_boundary(modelo, X, y, nombres_especies, 
-                             f'{nombre} - {nombre_dataset}', scaler, ax=ax)
+                             f'{nombre} - {nombre_dataset}', scaler, ax=ax, usar_pca=usar_pca)
         
         plt.tight_layout()
         nombre_archivo = f'frontera_{nombre.lower().replace(" ", "_")}_{nombre_dataset.lower().replace(" ", "_")}.png'
@@ -299,6 +333,70 @@ def visualizar_comparacion_metricas(resultados_lista, nombre_dataset):
     print(f"✓ Comparación de métricas guardada")
 
 # ============================================================================
+# RE-ENTRENAR MODELOS CON 2D PARA IRIS (SOLO PARA VISUALIZACIÓN)
+# ============================================================================
+
+def reentrenar_modelos_iris_2d(resultados_iris_4d, X_iris_2d, y_iris):
+    """Re-entrena los modelos de Iris con solo 2 características para visualización"""
+    
+    print("\nRe-entrenando modelos de Iris con 2 características para visualización...")
+    
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.naive_bayes import GaussianNB
+    from sklearn.svm import SVC
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.neural_network import MLPClassifier
+    
+    resultados_iris_2d = []
+    
+    for res in resultados_iris_4d:
+        nombre = res['nombre']
+        params = res['mejores_params']
+        
+        print(f"  Re-entrenando {nombre}...")
+        
+        # Crear nuevo modelo con los mismos hiperparámetros
+        if nombre == 'k-NN':
+            modelo_2d = KNeighborsClassifier(**params)
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_iris_2d)
+        elif nombre == 'Naive Bayes':
+            modelo_2d = GaussianNB(**params)
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_iris_2d)
+        elif nombre == 'SVM':
+            modelo_2d = SVC(**params, random_state=42)
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_iris_2d)
+        elif nombre == 'Árbol de Decisión':
+            modelo_2d = DecisionTreeClassifier(**params, random_state=42)
+            scaler = None
+            X_train = X_iris_2d
+        elif nombre == 'Random Forest':
+            modelo_2d = RandomForestClassifier(**params, random_state=42)
+            scaler = None
+            X_train = X_iris_2d
+        elif nombre == 'MLP':
+            modelo_2d = MLPClassifier(**params, random_state=42, early_stopping=True)
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_iris_2d)
+        
+        # Entrenar
+        modelo_2d.fit(X_train, y_iris)
+        
+        resultados_iris_2d.append({
+            'nombre': nombre,
+            'modelo': modelo_2d,
+            'scaler': scaler,
+            'mejores_params': params,
+            'resultados': res['resultados']  # Mantener las métricas originales (4D)
+        })
+    
+    print("✓ Modelos re-entrenados con 2D")
+    return resultados_iris_2d
+
+# ============================================================================
 # FUNCIÓN PRINCIPAL
 # ============================================================================
 
@@ -316,7 +414,7 @@ def main():
         with open('modelos_hojas.pkl', 'rb') as f:
             resultados_hojas = pickle.load(f)
         with open('modelos_iris.pkl', 'rb') as f:
-            resultados_iris = pickle.load(f)
+            resultados_iris_4d = pickle.load(f)
         print("✓ Modelos cargados exitosamente")
     except FileNotFoundError:
         print("ERROR: No se encontraron los modelos entrenados.")
@@ -334,10 +432,10 @@ def main():
     X_hojas, y_hojas, nombres_hojas = cargar_datos_hojas()
     
     visualizar_todas_fronteras(X_hojas, y_hojas, nombres_hojas, 
-                              resultados_hojas, "Base de Hojas")
+                              resultados_hojas, "Base de Hojas", usar_pca=False)
     
     visualizar_fronteras_individuales(X_hojas, y_hojas, nombres_hojas, 
-                                     resultados_hojas, "Base de Hojas")
+                                     resultados_hojas, "Base de Hojas", usar_pca=False)
     
     visualizar_matrices_confusion(resultados_hojas, nombres_hojas, "Base de Hojas")
     
@@ -351,17 +449,22 @@ def main():
     print("# VISUALIZACIONES PARA IRIS DATASET")
     print("#"*80)
     
-    X_iris, y_iris, nombres_iris = cargar_datos_iris()
+    # Cargar Iris con 2 características para visualización
+    X_iris_2d, y_iris, nombres_iris = cargar_datos_iris_2d()
     
-    visualizar_todas_fronteras(X_iris, y_iris, nombres_iris, 
-                              resultados_iris, "Iris Dataset")
+    # Re-entrenar modelos con 2D solo para visualización
+    resultados_iris_2d = reentrenar_modelos_iris_2d(resultados_iris_4d, X_iris_2d, y_iris)
     
-    visualizar_fronteras_individuales(X_iris, y_iris, nombres_iris, 
-                                     resultados_iris, "Iris Dataset")
+    visualizar_todas_fronteras(X_iris_2d, y_iris, nombres_iris, 
+                              resultados_iris_2d, "Iris Dataset", usar_pca=False)
     
-    visualizar_matrices_confusion(resultados_iris, nombres_iris, "Iris Dataset")
+    visualizar_fronteras_individuales(X_iris_2d, y_iris, nombres_iris, 
+                                     resultados_iris_2d, "Iris Dataset", usar_pca=False)
     
-    visualizar_comparacion_metricas(resultados_iris, "Iris Dataset")
+    # Usar los resultados 4D originales para matrices de confusión y métricas
+    visualizar_matrices_confusion(resultados_iris_4d, nombres_iris, "Iris Dataset")
+    
+    visualizar_comparacion_metricas(resultados_iris_4d, "Iris Dataset")
     
     # ========================================================================
     # FINALIZACIÓN
@@ -373,6 +476,8 @@ def main():
     print("\n✓ Fronteras de decisión generadas")
     print("✓ Matrices de confusión generadas")
     print("✓ Comparaciones de métricas generadas")
+    print("\nNOTA: Las fronteras de decisión de Iris se visualizan en 2D")
+    print("      (petal length vs petal width) pero las métricas son de 4D")
     print("\n" + "="*80 + "\n")
 
 if __name__ == "__main__":

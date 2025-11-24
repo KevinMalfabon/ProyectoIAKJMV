@@ -1,0 +1,7 @@
+Algoritmo,Hiperparámetros,F1-Score
+k-NN,"metric=euclidean, n_neighbors=5, p=1, weights=distance",0.8487
+Naive Bayes,var_smoothing=1e-10,0.7767
+SVM,"C=100, degree=2, gamma=0.1, kernel=rbf",0.8848
+Árbol de Decisión,"criterion=entropy, max_depth=10, max_features=None, min_samples_leaf=1, min_samples_split=2",0.8256
+Random Forest,"criterion=gini, max_depth=None, max_features=None, min_samples_leaf=2, min_samples_split=10, n_estimators=50",0.8635
+MLP,"activation=relu, alpha=0.0001, hidden_layer_sizes=(100, 50), learning_rate=constant, learning_rate_init=0.01, max_iter=1000, solver=adam",0.7306

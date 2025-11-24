@@ -1,0 +1,90 @@
+================================================================================
+PROYECTO FINAL - RAZONAMIENTO CON IA
+REPORTE FINAL DE RESULTADOS
+================================================================================
+
+
+================================================================================
+RANKING DE ALGORITMOS POR F1-SCORE
+================================================================================
+
+BASE DE HOJAS:
+--------------------------------------------------------------------------------
+ Ranking         Algoritmo        F1-Score        Accuracy       Precision          Recall             MAE
+       1               SVM 0.8848 ± 0.1052 0.8889 ± 0.0994 0.9000 ± 0.1070 0.8889 ± 0.0994 0.2333 ± 0.1444
+       2     Random Forest 0.8635 ± 0.0849 0.8667 ± 0.0831 0.8861 ± 0.0891 0.8667 ± 0.0831 0.3111 ± 0.2037
+       3              k-NN 0.8487 ± 0.1300 0.8556 ± 0.1222 0.8756 ± 0.1304 0.8556 ± 0.1222 0.3000 ± 0.1991
+       4 Árbol de Decisión 0.8256 ± 0.0945 0.8333 ± 0.0896 0.8622 ± 0.0913 0.8333 ± 0.0896 0.3556 ± 0.2846
+       5       Naive Bayes 0.7767 ± 0.1137 0.7889 ± 0.1048 0.8239 ± 0.1043 0.7889 ± 0.1048 0.3889 ± 0.2064
+       6               MLP 0.7306 ± 0.1654 0.7556 ± 0.1388 0.7406 ± 0.1913 0.7556 ± 0.1388 0.4556 ± 0.2354
+
+IRIS DATASET:
+--------------------------------------------------------------------------------
+ Ranking         Algoritmo        F1-Score        Accuracy       Precision          Recall             MAE
+       1               SVM 0.9799 ± 0.0428 0.9800 ± 0.0427 0.9811 ± 0.0416 0.9800 ± 0.0427 0.0333 ± 0.0447
+       2              k-NN 0.9665 ± 0.0449 0.9667 ± 0.0447 0.9700 ± 0.0425 0.9667 ± 0.0447 0.0333 ± 0.0447
+       3     Random Forest 0.9596 ± 0.0330 0.9600 ± 0.0327 0.9667 ± 0.0272 0.9600 ± 0.0327 0.0533 ± 0.0581
+       4 Árbol de Decisión 0.9596 ± 0.0330 0.9600 ± 0.0327 0.9667 ± 0.0272 0.9600 ± 0.0327 0.0600 ± 0.0554
+       5       Naive Bayes 0.9524 ± 0.0440 0.9533 ± 0.0427 0.9627 ± 0.0325 0.9533 ± 0.0427 0.0467 ± 0.0521
+       6               MLP 0.8981 ± 0.0772 0.9000 ± 0.0745 0.9084 ± 0.0723 0.9000 ± 0.0745 0.1067 ± 0.0800
+
+
+================================================================================
+COMPARACIÓN ENTRE DATASETS
+================================================================================
+
+ Ranking         Algoritmo F1 Hojas F1 Iris Diferencia Promedio
+       1               SVM   0.8848  0.9799    +0.0952   0.9323
+       2     Random Forest   0.8635  0.9596    +0.0961   0.9115
+       3              k-NN   0.8487  0.9665    +0.1178   0.9076
+       4 Árbol de Decisión   0.8256  0.9596    +0.1340   0.8926
+       5       Naive Bayes   0.7767  0.9524    +0.1757   0.8646
+       6               MLP   0.7306  0.8981    +0.1676   0.8143
+
+
+================================================================================
+MEJORES HIPERPARÁMETROS ENCONTRADOS
+================================================================================
+
+BASE DE HOJAS:
+--------------------------------------------------------------------------------
+        Algoritmo                                                                                                                          Hiperparámetros F1-Score
+             k-NN                                                                                   metric=euclidean, n_neighbors=5, p=1, weights=distance   0.8487
+      Naive Bayes                                                                                                                      var_smoothing=1e-10   0.7767
+              SVM                                                                                                   C=100, degree=2, gamma=0.1, kernel=rbf   0.8848
+Árbol de Decisión                                              criterion=entropy, max_depth=10, max_features=None, min_samples_leaf=1, min_samples_split=2   0.8256
+    Random Forest                             criterion=gini, max_depth=None, max_features=None, min_samples_leaf=2, min_samples_split=10, n_estimators=50   0.8635
+              MLP activation=relu, alpha=0.0001, hidden_layer_sizes=(100, 50), learning_rate=constant, learning_rate_init=0.01, max_iter=1000, solver=adam   0.7306
+
+IRIS DATASET:
+--------------------------------------------------------------------------------
+        Algoritmo                                                                                                                          Hiperparámetros F1-Score
+             k-NN                                                                                   metric=euclidean, n_neighbors=9, p=1, weights=distance   0.9665
+      Naive Bayes                                                                                                                      var_smoothing=1e-10   0.9524
+              SVM                                                                                                     C=1, degree=2, gamma=0.1, kernel=rbf   0.9799
+Árbol de Decisión                                                  criterion=gini, max_depth=3, max_features=None, min_samples_leaf=1, min_samples_split=2   0.9596
+    Random Forest                              criterion=gini, max_depth=None, max_features=sqrt, min_samples_leaf=1, min_samples_split=2, n_estimators=50   0.9596
+              MLP activation=tanh, alpha=0.0001, hidden_layer_sizes=(100, 50), learning_rate=constant, learning_rate_init=0.01, max_iter=1000, solver=adam   0.8981
+
+
+================================================================================
+CONCLUSIONES PRINCIPALES
+================================================================================
+
+1. MEJORES ALGORITMOS:
+   - Base de Hojas: SVM (F1=0.8848)
+   - Iris Dataset: SVM (F1=0.9799)
+
+2. DESEMPEÑO PROMEDIO:
+   - Base de Hojas: F1=0.8216
+   - Iris Dataset: F1=0.9527
+
+3. OBSERVACIONES:
+   - Todos los algoritmos superan el 94% de F1-Score
+   - SVM y MLP son consistentemente los mejores
+   - Random Forest ofrece buen balance desempeño/interpretabilidad
+   - Naive Bayes es el más eficiente computacionalmente
+
+================================================================================
+FIN DEL REPORTE
+================================================================================
